@@ -2,6 +2,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 const shell = require('shelljs')
 const fs = require("fs")
+const config = require('./config')
 
 const app = express()
 const port = 3001
@@ -9,11 +10,13 @@ const port = 3001
 app.use(express.json())
 app.use(express.static(__dirname + '/public'))
 app.set('views', __dirname + '/results');
+app.set('jwt-secret', config.secret)
 app.engine('html', require('ejs').renderFile);
 //크로스도메인 허용
 app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    // res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Headers', '*');
     next();
 });
 

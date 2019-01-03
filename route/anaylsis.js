@@ -1,5 +1,6 @@
 const router = require('express').Router()
 const Analysis = require('../models/analysis')
+const History = require('../models/history')
 const shell = require('shelljs')
 const fs = require("fs")
 const puppeteer = require('puppeteer')
@@ -13,7 +14,7 @@ router.post('/', (req, res) => {
   var now = new Date();
   var datetime = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
   datetime += ' ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
-  var title = req.body.url+" - "+datetime
+  var title = req.body.url
   var dir = req.body.userId + ID()
   console.log(req.body.url)
   if (shell.exec("lighthouse " + req.body.url + ` --output-path=./results/${dir}.json --output json --output html --output csv --chrome-flags='--headless'`)) {
@@ -39,11 +40,12 @@ router.post('/', (req, res) => {
             printBackground: true
           });
           await browser.close();
-          res.send("success")
+          await console.log("made pdf file")
+          await makeHsitory(data, title, req.body.userId, datetime, dir);
+          return res.send("success")
         })();
       })
       .catch(err => res.send(err))
-    return res.send("success")
   } else {
     console.log("fail")
     return res.json("error")
@@ -110,5 +112,20 @@ router.get('/getFile/:file/:type', (req, res) => {
   let dir = __dirname.substring(0, __dirname.length - 5)
   res.download(`${dir}/results/${req.params.file}.report.${req.params.type}`)
 })
+
+function makeHsitory(data, title, id, date, dir){
+  let static_dir = __dirname.substring(0, __dirname.length - 5)
+  fs.readFile(`${static_dir}/results/${dir}.report.json`, 'utf8', (err, result) =>{
+    if(err) console.log(err)
+    const JSONResult = JSON.parse(result)
+    History.create({
+      userId: id,
+      title: title,
+      date: date,
+      score: `${JSONResult.categories.performance.score}-${JSONResult.categories.pwa.score}-${JSONResult.categories.accessibility.score}-${JSONResult.categories['best-practices'].score}-${JSONResult.categories.seo.score}`,
+      dir:data._id,
+    }).catch(e => {})
+  })
+}
 
 module.exports = router

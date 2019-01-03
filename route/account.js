@@ -1,11 +1,31 @@
 const router = require('express').Router()
 const Users = require('../models/users')
+const jwt = require('jsonwebtoken')
 
 // 현재 저장된 전체 유저 조회
 router.get('/',(req, res) => {
   Users.findAll()
     .then(users => {
       res.send(users)
+    })
+    .catch(err => res.status(500).send(err))
+})
+
+//특정 아이디 정보 조회(id: 정보 조회할 아이디)
+router.post('/getUser', (req, res) => {
+  Users.findOne({
+      id: req.body.id
+    })
+    .then(user => {
+      let dataToSend = {
+        id : user.id,
+        name : user.name,
+        birth : user.birth,
+        gender : user.gender,
+        email : user.email,
+        tier : user.tier
+      }
+      res.send(dataToSend)
     })
     .catch(err => res.status(500).send(err))
 })
@@ -31,18 +51,21 @@ router.post('/login', (req, res) => {
       id: req.body.id, 
       pw: req.body.pw
     })
-    .then(user => res.send({
+    .then(function(user){
+      const secret = req.app.get('jwt-secret')
+      var token = jwt.sign({
         id: user.id,
-        name:user.name,
-        email:user.email,
-        gender:user.gender,
-        birth:user.birth,
-        tier:user.tier,
+      }, secret, {
+        expiresIn: '1d'
+      });
+      user.token = token
+      user.save()
+      res.send({
+        token: token,
         code: "success"
-      }))
-      .catch(err => res.send({
-        code: "not found"
-      }))
+      })
+    })
+    .catch(err => console.log(err))
 })
 
 // 4. register(id: 사용자 아이디, pw: 사용자 비밀번호, name: 사용자 이름, birth: 사용자 생년월일, gender: 사용자 성별, email: 사용자 이메일)
@@ -103,16 +126,68 @@ router.post('/update', (req, res) => {
       pw: req.body.pw
     })
     .then(user => {
+      const secret = req.app.get('jwt-secret')
+      var token = jwt.sign({
+        id: user.id,
+      }, secret, {
+        expiresIn: '1d'
+      });
       user.pw = req.body.pw
       user.name = req.body.name
       user.birth = req.body.birth
       user.email = req.body.email
       user.gender = req.body.gender
       user.tier = user.tier
+      user.token = token
       user.save()
-      res.send("success")
+      res.send({
+        token: token,
+        code: "success"
+      })
     })
     .catch(err => res.send("not found"))
+})
+
+//jwt 검증
+router.post('/jwt', (req, res) => {
+  const token = req.headers['x-access-token'] || req.query.token
+  if (!token || token=="") {
+    return res.json({
+      success: false,
+      message: 'not logged in'
+    })
+  }
+
+  const p = new Promise(
+    (resolve, reject) => {
+      jwt.verify(token, req.app.get('jwt-secret'), (err, decoded) => {
+        if (err) reject(err)
+        resolve(decoded)
+      })
+    }
+  )
+
+  const onError = (error) => {
+    res.json({
+      success: false,
+      message: error.message
+    })
+  }
+
+  p.then((decoded) => {
+    Users.findOne({
+      id : decoded.id,
+      token: token
+    })
+    .then((user) => {
+      if (user) res.send(decoded)
+      else res.send({success:false})
+    })
+    .catch(err => res.json({
+      success: false,
+      message: err.message
+    }))
+  }).catch(onError)
 })
 
 module.exports = router

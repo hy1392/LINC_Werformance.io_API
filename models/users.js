@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     gender:{type:String, required: true},
     email:{type:String, required: true},
     tier:{type:String, required: true},
+    token:{type:String},
 })
 
 userSchema.statics.create = function(payload){
