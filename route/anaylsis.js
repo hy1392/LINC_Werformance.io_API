@@ -4,6 +4,7 @@ const History = require('../models/history')
 const shell = require('shelljs')
 const fs = require("fs")
 const puppeteer = require('puppeteer')
+var ObjectId = require('mongodb').ObjectId;
 
 
 var ID = function () {
@@ -97,9 +98,27 @@ router.get('/getAnalysis/:id', (req, res) => {
 })
 
 router.post('/deleteAnalysisList', (req, res) => {
-  Analysis.remove({
+  Analysis.deleteOne({
       _id: req.body._id
-    }).then(results => res.send(results))
+    }).then(History.deleteOne({dir:req.body._id}).then(res.send("success")))
+    .catch(err => res.send(err))
+})
+
+router.post('/getHistory', (req, res) => {
+  console.log(req.body)
+  Analysis.findOne({
+      _id: new ObjectId(req.body._id)
+    }).then((result) => {
+      console.log(result.userId)
+      console.log(result.title)
+      History.find({
+        userId: result.userId,
+        title: result.title
+      }).sort({
+        '_id': -1
+      }).limit(10)
+      .then((result) => res.send(result))
+    })
     .catch(err => res.send(err))
 })
 
