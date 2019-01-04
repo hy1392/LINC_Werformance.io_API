@@ -5,7 +5,7 @@ const shell = require('shelljs')
 const fs = require("fs")
 const puppeteer = require('puppeteer')
 var ObjectId = require('mongodb').ObjectId;
-
+const csv = require('csvtojson')
 
 var ID = function () {
   return '_' + Math.random().toString(36).substr(2, 9);
@@ -118,6 +118,37 @@ router.post('/getHistory', (req, res) => {
         '_id': -1
       }).limit(10)
       .then((result) => res.send(result))
+    })
+    .catch(err => res.send(err))
+})
+
+router.post('/getDetail', (req, res) => {
+  console.log(req.body)
+  Analysis.findOne({
+      _id: new ObjectId(req.body._id)
+    }).then((result) => {
+      let dir = __dirname.substring(0, __dirname.length - 5)
+      console.log(`${dir}/results/${result.dir}.report.csv`)
+      const csvFilePath = `${dir}/results/${result.dir}.report.csv`
+      csv()
+        .fromFile(csvFilePath)
+        .then((jsonObj) => {
+          res.send(jsonObj)
+        })
+      const jsonArray = csv().fromFile(csvFilePath);
+      // fs.readFile(`${dir}/results/${result.dir}.report.csv`, (err, data) => {
+      //   if (err) throw err;
+      //   //  csv({
+      //   //      noheader: true,
+      //   //      output: "csv"
+      //   //    })
+      //   //    .fromString(data)
+      //   //    .then((csvRow) => {
+      //   //      res.send(csvRow);
+      //   //    })
+      //   console.log(data)
+      //   res.send(data)
+      // });
     })
     .catch(err => res.send(err))
 })

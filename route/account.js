@@ -55,6 +55,7 @@ router.post('/login', (req, res) => {
       const secret = req.app.get('jwt-secret')
       var token = jwt.sign({
         id: user.id,
+        tier: user.tier
       }, secret, {
         expiresIn: '1d'
       });
@@ -129,6 +130,7 @@ router.post('/update', (req, res) => {
       const secret = req.app.get('jwt-secret')
       var token = jwt.sign({
         id: user.id,
+        tier:user.tier
       }, secret, {
         expiresIn: '1d'
       });
