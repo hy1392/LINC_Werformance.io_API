@@ -150,6 +150,22 @@ router.post('/update', (req, res) => {
     .catch(err => res.send("not found"))
 })
 
+// 7. updateUserTier
+// 사용자 개인정보 수정
+router.post('/updateTier', (req, res) => {
+  Users.findOne({
+      id: req.body.id,
+    })
+    .then(user => {
+      user.tier = 'paid'
+      user.save()
+      res.send({
+        code: "success"
+      })
+    })
+    .catch(err => res.send("not found"))
+})
+
 //jwt 검증
 router.post('/jwt', (req, res) => {
   const token = req.headers['x-access-token'] || req.query.token
