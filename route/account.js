@@ -157,9 +157,18 @@ router.post('/updateTier', (req, res) => {
       id: req.body.id,
     })
     .then(user => {
+      const secret = req.app.get('jwt-secret')
+      var token = jwt.sign({
+        id: user.id,
+        tier: "paid"
+      }, secret, {
+        expiresIn: '1d'
+      });
+      user.token = token
       user.tier = 'paid'
       user.save()
       res.send({
+        token: token,
         code: "success"
       })
     })
