@@ -52,18 +52,24 @@ router.post('/login', (req, res) => {
       pw: req.body.pw
     })
     .then(function(user){
-      const secret = req.app.get('jwt-secret')
-      var token = jwt.sign({
-        id: user.id,
-        tier: user.tier
-      }, secret, {
-        expiresIn: '1d'
-      });
-      user.token = token
-      user.save()
+      if(user){
+        const secret = req.app.get('jwt-secret')
+        var token = jwt.sign({
+          id: user.id,
+          tier: user.tier
+        }, secret, {
+          expiresIn: '1d'
+        });
+        user.token = token
+        user.save()
+        res.send({
+          token: token,
+          code: "success"
+        })
+        return
+      }
       res.send({
-        token: token,
-        code: "success"
+        code: "not found"
       })
     })
     .catch(err => console.log(err))
