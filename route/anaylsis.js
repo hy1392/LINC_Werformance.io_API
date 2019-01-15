@@ -16,9 +16,10 @@ router.post('/', (req, res) => {
   var datetime = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
   datetime += ' ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
   var title = req.body.url
+  if (!(title.slice(0, 7) == "http://" || title.slice(0, 8) == "https://")) title = "http://"+title
   var dir = req.body.userId + ID()
-  console.log(req.body.url)
-  if (shell.exec("lighthouse " + req.body.url + ` --output-path=./results/${dir}.json --output json --output html --output csv --chrome-flags='--headless'`)) {
+  console.log(title)
+  if (shell.exec("lighthouse " + title + ` --output-path=./results/${dir}.json --output json --output html --output csv --chrome-flags='--headless'`)) {
     console.log("success")
     Analysis.create({
         userId: req.body.userId,
@@ -65,11 +66,6 @@ router.post('/getAnalysis', (req, res) => {
       _id: req.body._id
     }).then(function (result) {
       let dir = __dirname.substring(0, __dirname.length - 5)
-      // fs.readFile(`${dir}/results/${result[0].dir}.report.json`, (err, data) => {
-      //   if (err) throw err;
-      //   let jsonData = JSON.parse(data);
-      //   res.send(jsonData);
-      // });
       fs.readFile(`${dir}/results/${result[0].dir}.report.html`, (err, data) => {
         if (err) throw err;
         res.send(data);
@@ -85,14 +81,7 @@ router.get('/getAnalysis/:id', (req, res) => {
       _id: req.params.id
     }).then(function (result) {
       let dir = __dirname.substring(0, __dirname.length - 5)
-      // fs.readFile(`${dir}/results/${result[0].dir}.report.json`, (err, data) => {
-      //   if (err) throw err;
-      //   let jsonData = JSON.parse(data);
-      //   res.send(jsonData);
-      // });
       res.render(`${result[0].dir}.report.html`);
-
-
     })
     .catch(err => res.send(err))
 })
@@ -136,19 +125,6 @@ router.post('/getDetail', (req, res) => {
           res.send(jsonObj)
         })
       const jsonArray = csv().fromFile(csvFilePath);
-      // fs.readFile(`${dir}/results/${result.dir}.report.csv`, (err, data) => {
-      //   if (err) throw err;
-      //   //  csv({
-      //   //      noheader: true,
-      //   //      output: "csv"
-      //   //    })
-      //   //    .fromString(data)
-      //   //    .then((csvRow) => {
-      //   //      res.send(csvRow);
-      //   //    })
-      //   console.log(data)
-      //   res.send(data)
-      // });
     })
     .catch(err => res.send(err))
 })
